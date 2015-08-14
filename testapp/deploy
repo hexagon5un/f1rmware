@@ -1,0 +1,5 @@
+/usr/local/bin/mountRad10
+sleep 1s
+sudo cp testapp.b1n foomount/
+sleep 1s
+sudo umount foomount
