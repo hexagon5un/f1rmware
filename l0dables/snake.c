@@ -13,7 +13,9 @@
 #include <r0ketlib/render.h>
 #include <r0ketlib/print.h>
 #include <r0ketlib/keyin.h>
+#include <r0ketlib/select.h>
 #include <r0ketlib/itoa.h>
+#include <stdlib.h>
 
 #include "invfont.c"
 
@@ -54,8 +56,10 @@ static int hitWall();
 static int hitFood();
 static int hitSelf();
 static int showHighscore();
+static int highscore_get();
 
 int points = 0;
+int highscore = 0;
 struct snake_s snake = { NULL, 3, 0, MIN_SPEED, 2};
 struct pos_s food;
 
@@ -65,6 +69,11 @@ void ram(void)
 
   struct pos_s tail[MAX_SNAKE_LEN];
   snake.tail = tail;
+
+  // load the highscore
+  highscore = highscore_get();
+  if (highscore == 0)
+    highscore = 1;
 
   // initially reset everything
   reset();
@@ -96,7 +105,7 @@ void ram(void)
 
       // remove last, add first line
       draw_block(snake.tail[del].x, snake.tail[del].y, 0xFF);
-      draw_block(snake.tail[pos].x, snake.tail[pos].y, 0x00);
+      draw_block(snake.tail[pos].x, snake.tail[pos].y, 0b00011000);
 
       // check for obstacle hit..
       if (hitWall() || hitSelf()) {
@@ -144,13 +153,13 @@ static void reset()
   // setup the screen
   lcdClear();
   for (i=MIN_X; i<MAX_X; i++) {
-    lcdSetPixel(i,MIN_Y,0x00);
-    lcdSetPixel(i,MAX_Y,0x00);
+    lcdSetPixel(i,MIN_Y,0b000101011);
+    lcdSetPixel(i,MAX_Y,0b000101011);
   }
 
   for (i=MIN_Y; i<MAX_Y; i++) {
-    lcdSetPixel(MIN_X,i,0x00);
-    lcdSetPixel(MAX_X,i,0x00);
+    lcdSetPixel(MIN_X,i,0b000101011);
+    lcdSetPixel(MAX_X,i,0b000101011);
   }
 
   snake.speed = MIN_SPEED;
@@ -169,9 +178,9 @@ static void reset()
   snake.tail[2].y = SIZE_Y/2;
 
   // print initail tail
-  draw_block(snake.tail[0].x, snake.tail[0].y, 0x00);
-  draw_block(snake.tail[1].x, snake.tail[1].y, 0x00);
-  draw_block(snake.tail[2].x, snake.tail[2].y, 0x00);
+  draw_block(snake.tail[0].x, snake.tail[0].y, 0b00011000);
+  draw_block(snake.tail[1].x, snake.tail[1].y, 0b00011000);
+  draw_block(snake.tail[2].x, snake.tail[2].y, 0b00011000);
 
   // switch to level one
   next_level();
@@ -196,12 +205,37 @@ static void draw_block(int x, int y, int set)
 
 static void next_level()
 {
+  char highscore_string[20];
+  char points_string[20];
   food = getFood();
-  draw_block( food.x, food.y, 0x00);
+  draw_block( food.x, food.y, 0b11101000);
 
-  snake.len++;
-  snake.speed--;
-  DoString(0,0,IntToStr(++points,6,0));
+  points++;
+  strcpy (points_string,"Points: ");
+  strcat (points_string,IntToStr(points,6,0));
+
+  strcpy (highscore_string,"HI: ");
+  strcat (highscore_string,IntToStr(highscore,6,0));
+
+  if(snake.len < MAX_SNAKE_LEN-2)
+    snake.len++;
+  if(snake.speed >= MAX_SPEED)
+    snake.speed--;
+
+  // Display point color based on compare with highscore
+  if (points<highscore || (points==1 && highscore==1)) {
+    // Black
+    setTextColor(0xff,0x00);
+  } else if (points==highscore) {
+    // Dark Yellow
+    setTextColor(0xff,0b11011000);
+  } else if (points>highscore) {
+    // Dark Green
+    setTextColor(0xff,0b00011000);
+  }
+  DoString(0,0,points_string);
+  setTextColor(0xff,0b00000011);
+  DoString(MAX_X-44,0,highscore_string);
 }
 
 static void handle_input()
@@ -245,7 +279,7 @@ static void death_anim()
 
   while(a--) {
     //    lcdToggleFlag(LCD_INVERTED);
-    lcdFill(0x00);
+    lcdFill(0b11100000);
     lcdDisplay();
     delayms(100);
     lcdFill(0xFF);
@@ -262,7 +296,10 @@ static void death_anim()
 
 }
 
-static bool highscore_set(uint32_t score, char nick[]) {
+static bool highscore_set(uint32_t score) {
+    writeFile("snake.5cr",IntToStr(score,6,0),strlen(IntToStr(score,6,0)));
+
+  // old r0ket code to get highscore from the world
 #if 0
     MPKT * mpkt= meshGetMessage('s');
     if(MO_TIME(mpkt->pkt)>score)
@@ -278,7 +315,11 @@ static bool highscore_set(uint32_t score, char nick[]) {
 	return true;
 }
 
-static uint32_t highscore_get(char nick[]){
+static int highscore_get(){
+  char filecontent[FLEN];
+  readTextFile("snake.5cr",filecontent,FLEN);
+
+  // old r0ket code to send highscore to the world
 #if 0
     MPKT * mpkt= meshGetMessage('s');
     char * packet_nick = (char*)MO_BODY(mpkt->pkt);
@@ -288,27 +329,47 @@ static uint32_t highscore_get(char nick[]){
     strcpy(nick, packet_nick);
 	return MO_TIME(mpkt->pkt);
 #endif
-  return 0;
+
+  // I don't get it, but we have to somehow read the variable, otherwise atoi will return 0... o_O
+  strlen(filecontent);
+  return atoi(filecontent);
 }
 
 static int showHighscore()
 {
   int key = getInputRaw(); //throw away pending keypress
   char nick[20];
-  uint32_t score = 0;
-
-  highscore_set(points,GLOBAL(nickname));
-  score = highscore_get(nick);
 
   lcdClear();
+  if (points>highscore) {
+    setTextColor(0xff,0b11100000);
+    DoString(0,10, "  NEW HIGHSCORE");
+  }
+  setTextColor(0xff,0x00);
   DoString(0,RESY/2-33, "  Your Score");
+  // Display own score in green color, if it's higher than high score, else red
+  if (points>highscore) {
+    setTextColor(0xff,0b00011100);
+    // Save highscore if higher
+    highscore_set(points);
+  } else {
+    setTextColor(0xff,0b11100000);
+  }
   DoString(RESX/2-4, RESY/2-25, IntToStr(points,6,0));
-  DoString(0,RESY/2-10, "  Highscore");
-  DoString(RESX/2-4, RESY/2-2, IntToStr(score,6,0));
+  setTextColor(0xff,0x00);
+  DoString(0,RESY/2-10, "  Your Highscore");
+  setTextColor(0xff,0b00000011);
+  DoString(RESX/2-4, RESY/2-2, IntToStr(highscore,6,0));
+  setTextColor(0xff,0x00);
   DoString(0, RESY/2+18, "  UP to play ");
   DoString(0, RESY/2+26, "DOWN to quit ");
 
   lcdDisplay();
+
+  if (points>highscore) {
+      // set highscore variable for next round
+      highscore = points;
+  }
 
   while(1) {
     key = getInputRaw();

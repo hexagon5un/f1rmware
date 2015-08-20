@@ -13,6 +13,7 @@ OBJS += ../r0ketlib/print.o
 OBJS += ../r0ketlib/itoa.o
 OBJS += ../r0ketlib/keyin.o
 OBJS += ../r0ketlib/menu.o
+OBJS += ../r0ketlib/mesh.o
 OBJS += ../rad1olib/spi-flash.o
 OBJS += ../rad1olib/assert.o
 OBJS += ../rad1olib/systick.o
@@ -39,6 +40,7 @@ OBJS += ../lpcapi/cdc/cdc_main.o
 OBJS += ../lpcapi/cdc/cdc_vcom.o
 OBJS += ../rad1olib/light_ws2812_cortex.o
 OBJS += ../rad1olib/battery.o
+OBJS += ../rad1olib/draw.o
 
 # CPLD
 OBJS += ../hackrf/firmware/common/xapp058/micro.o

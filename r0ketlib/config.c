@@ -10,6 +10,10 @@
 #include <fatfs/ff.h>
 #include <string.h>
 #include <stdint.h>
+#if DEBUG
+#include <r0ketlib/idle.h>
+#include <r0ketlib/print.h>
+#endif
 
 #define CFGVER 3
 
@@ -30,12 +34,14 @@ struct CDESC the_config[]= {
     {"nickfg",           0,     0, 255, 1, CFG_TYPE_DEVEL},
     {"nickbg",           255,   0, 255, 1, CFG_TYPE_DEVEL},
     {"vdd_fix",          0,     0, 1,   0, 0},
+    {"rgbleds",          0,     0, 1,   0, 0},
     { NULL,              0,     0, 0  , 0, 0},
 };
 
 char nickname[MAXNICK]="anonymous";
 char nickfont[FLEN];
 char nickl0[FLEN];
+char ledfile[FLEN];
 
 #define CONFFILE "rad1o.cfg"
 #define CONF_ITER for(int i=0;the_config[i].name!=NULL;i++)
@@ -52,11 +58,19 @@ void applyConfig(){
     else
         OFF(LCD_BL_EN);
 
+	if(GLOBAL(rgbleds)) {
+		SETUPgout(RGB_LED);
+	} else {
+		SETUPgin(RGB_LED);
+	}
+
     if(GLOBAL(vdd_fix))
         ON(EN_VDD);
     else
         OFF(EN_VDD);
 
+    lcdSetRotation(GLOBAL(lcdmirror));
+    keySetRotation(GLOBAL(lcdmirror));
 }
 
 int saveConfig(void){
@@ -100,6 +114,8 @@ int saveConfig(void){
 #if DEBUG
 	lcdPrint("close:");
 	lcdPrintln(f_get_rc_string(res));
+  lcdDisplay();
+  delayms(2000);
 #endif
 	if(res){
 		return 1;

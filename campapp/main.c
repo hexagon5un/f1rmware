@@ -120,7 +120,7 @@ void sys_tick_handler(void){
 void fancyNickname(void);
 
 int main(void) {
-	cpu_clock_init(); /* CPU Clock is now 104 MHz */
+	cpuClockInit(); /* CPU Clock is now 104 MHz */
 	ssp_clock_init();
 	systickInit();
 
@@ -134,6 +134,8 @@ int main(void) {
 	SETUPgout(LED2);
 	SETUPgout(LED3);
 	SETUPgout(LED4);
+
+	SETUPgout(RGB_LED);
 
 	inputInit();
 	fsInit(); 

@@ -1,4 +1,4 @@
-delay
+delayNop
 getInput
 getInputRaw
 getInputWait
@@ -43,3 +43,18 @@ lcd_select
 lcd_deselect
 lcdWrite
 ws2812_sendarray
+batteryCharging
+batteryGetVoltage
+drawHLine
+drawVLine
+drawRectFill
+readTextFile
+writeFile
+drawLine
+lcdMoveCrsr
+DoRect
+DoLine
+DoCube
+DoMesh
+getMeshSizes
+getMesh
