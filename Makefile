@@ -6,8 +6,10 @@ travis:
 
 subdirs:
 	$(MAKE) -C campapp
+	$(MAKE) -C ccccmaze
 	$(MAKE) -C testapp
 	$(MAKE) -C musicapp
+	$(MAKE) -C rfapp
 	$(MAKE) -C bootloader
 	$(MAKE) -C flashapp
 	$(MAKE) -C l0dables
@@ -33,8 +35,10 @@ hackrf: hackrf/Readme.md hackrf/firmware/hackrf_usb/build/hackrf_usb.bin
 
 clean:
 	$(MAKE) -C campapp clean
+	$(MAKE) -C ccccmaze clean
 	$(MAKE) -C testapp clean
 	$(MAKE) -C musicapp clean
+	$(MAKE) -C rfapp clean
 	$(MAKE) -C bootloader clean
 	$(MAKE) -C flashapp clean
 	$(MAKE) -C l0dables clean
